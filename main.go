@@ -6,8 +6,7 @@ import (
 )
 
 func main() {
-	conf := config.Config()
-	port := conf.Environment.Port()
+	envConf := config.Env()
 
-	server.NewServer(conf).Run(":" + port)
+	server.NewServer(envConf).Run(":" + envConf.Port)
 }

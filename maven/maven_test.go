@@ -1,52 +1,63 @@
 package maven_test
 
 import (
-	"github.com/locrep/locrep-go/config"
-	"github.com/locrep/locrep-go/server"
-	. "github.com/locrep/locrep-go/utils"
+	"github.com/google/uuid"
+	"github.com/locrep/go/config"
+	"github.com/locrep/go/maven"
+	"github.com/locrep/go/server"
+	. "github.com/locrep/go/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 )
 
-var _ = Describe("when doing maven install", func() {
+var _ = Describe("when artifact exists", func() {
 	var (
-		testServer *httptest.Server
-		recorder   *httptest.ResponseRecorder
+		testServer      *httptest.Server
+		actualResp      *http.Response
+		err             error
+		expectedContent = uuid.New().String()
 	)
+	const dummyArtifact = "/dummy-artifact.zip"
 
 	BeforeAll(func() {
-		_, err := exec.Command("rm", "-rf", "~/.m2/repository").Output()
+		err = os.Mkdir(maven.Repo, 0644)
 		Expect(err).Should(BeNil())
 
-		conf := config.Config()
-		testServer = httptest.NewServer(server.NewServer(conf))
-		recorder = httptest.NewRecorder()
+		_, err = os.Create(maven.Repo + dummyArtifact)
+		Expect(err).Should(BeNil())
 
-		cmd := exec.Command("mvn", "package", "-Dmaven.repo.remote=http://localhost:"+conf.Environment.Port())
-		cmd.Dir = "dummy-repo/"
+		err = ioutil.WriteFile(maven.Repo+dummyArtifact, []byte(expectedContent), 0644)
+		Expect(err).Should(BeNil())
 
-		result, err := cmd.Output()
-		println(string(result))
+		envConf := config.Env()
+		testServer = httptest.NewServer(server.NewServer(envConf))
+
+		actualResp, err = testServer.Client().Get(testServer.URL + dummyArtifact)
 		Expect(err).Should(BeNil())
 	})
 
-	It("should return 200 status ok", func() {
-		Expect(recorder.Result().StatusCode).Should(Equal(http.StatusOK))
+	It("the server should return 200 status ok", func() {
+		Expect(actualResp.StatusCode).Should(Equal(http.StatusOK))
 	})
 
-	It("should return hello world", func() {
-		greeting, err := ioutil.ReadAll(recorder.Result().Body)
-		Expect(string(greeting)).Should(Equal("Hello world"))
+	It("should return expected file", func() {
+		actualContent, err := ioutil.ReadAll(actualResp.Body)
 		Expect(err).Should(BeNil())
+
+		Expect(actualContent).Should(Equal([]byte(expectedContent)))
 	})
 
 	AfterAll(func() {
 		testServer.Close()
-		os.RemoveAll("dummy-repo/target/")
+
+		err := os.RemoveAll(dummyArtifact)
+		Expect(err).Should(BeNil())
+
+		err = os.Remove(maven.Repo)
+		Expect(err).Should(BeNil())
 	})
 })

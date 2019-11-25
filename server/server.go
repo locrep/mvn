@@ -6,19 +6,23 @@ import (
 	"github.com/locrep/go/maven"
 )
 
-func mavenMiddleware(config config.Conf) func(ctx *gin.Context) {
+type Handler interface {
+	Handle(ctx *gin.Context)
+}
+
+func middleware(handler Handler) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
-		mvnHandler := maven.NewHandler(config)
-		mvnHandler.Handle(ctx)
+		handler.Handle(ctx)
 		ctx.Next()
 	}
 }
 
-func NewServer(config config.Conf) *gin.Engine {
-	gin.SetMode(config.Environment.BuildMode())
+func NewServer(envConf config.Environment) *gin.Engine {
+	gin.SetMode(envConf.BuildMode)
 
 	server := gin.New()
-	server.Use(mavenMiddleware(config))
+	mvnHandler := maven.NewHandler(envConf)
+	server.Use(middleware(mvnHandler))
 
 	return server
 }

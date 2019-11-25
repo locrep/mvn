@@ -9,18 +9,18 @@ import (
 	"strings"
 )
 
-const Repo = "./maven-repo"
+const Repo = "./repo"
 
 type handler struct {
-	config config.Conf
+	envConf config.Environment
 }
 
-func NewHandler(config config.Conf) handler {
-	return handler{config: config}
+func NewHandler(envConf config.Environment) handler {
+	return handler{envConf: envConf}
 }
 
 func (h handler) Handle(ctx *gin.Context) {
-	for _, repo := range config.Config().MavenRepos {
+	for _, repo := range config.MavenRepos {
 		filePath := Repo + ctx.Request.URL.String()
 
 		if _, err := os.Stat(filePath); !os.IsNotExist(err) {
@@ -30,7 +30,7 @@ func (h handler) Handle(ctx *gin.Context) {
 
 		response, body, errs := gorequest.New().Get(repo + ctx.Request.URL.String()).EndBytes()
 		if len(errs) > 0 || response.StatusCode != http.StatusOK {
-			ctx.JSON(404, DependencyFetchError(errs[0]))
+			ctx.JSON(http.StatusNotFound, DependencyFetchError(errs[0]))
 		}
 
 		var (
@@ -43,16 +43,16 @@ func (h handler) Handle(ctx *gin.Context) {
 		folder := filePath[0 : len(filePath)-len(fileName)]
 
 		if err := os.MkdirAll(folder, 0777); err != nil {
-			ctx.JSON(404, FileCreateError(err))
+			ctx.JSON(http.StatusNotFound, FileCreateError(err))
 		}
 
 		if file, err = os.Create(filePath); err != nil {
-			ctx.JSON(404, FileCreateError(err))
+			ctx.JSON(http.StatusNotFound, FileCreateError(err))
 		}
 		defer file.Close()
 
 		if _, err := file.Write(body); err != nil {
-			ctx.JSON(404, FileWriteError(err))
+			ctx.JSON(http.StatusNotFound, FileWriteError(err))
 		}
 		//todo: check sha and md5
 		//todo: log
