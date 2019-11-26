@@ -4,9 +4,11 @@ import (
 	"os"
 )
 
-var MavenRepos = []string{
+var MavenOriginRepos = []string{
 	"https://repo.maven.apache.org/maven2",
 }
+
+var MavenRepo = "./repo"
 
 type Environment struct {
 	Port      string

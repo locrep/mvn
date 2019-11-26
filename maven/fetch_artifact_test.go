@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 )
 
 var _ = Describe("when artifact exists", func() {
@@ -20,25 +19,20 @@ var _ = Describe("when artifact exists", func() {
 		actualResp      *http.Response
 		err             error
 		expectedContent = uuid.New().String()
+		artifacts maven.Artifacts
 	)
-	const dummyArtifact = "/dummy-artifact.zip"
 
 	BeforeAll(func() {
-		if _, err = os.Stat(maven.Repo); os.IsNotExist(err) {
-			err = os.Mkdir(maven.Repo, 0700)
-			Expect(err).Should(BeNil())
-		}
+		artifacts = createDummyRepos([]byte(expectedContent))
 
-		_, err = os.Create(maven.Repo + dummyArtifact)
-		Expect(err).Should(BeNil())
-
-		err = ioutil.WriteFile(maven.Repo+dummyArtifact, []byte(expectedContent), 0644)
-		Expect(err).Should(BeNil())
-
+		//run server
 		envConf := config.Env()
+		config.MavenRepo = dummyRepo
 		testServer = httptest.NewServer(server.NewServer(envConf))
 
-		actualResp, err = testServer.Client().Get(testServer.URL + dummyArtifact)
+		artifactPath := artifacts[0].String()
+		//fetch artifact
+		actualResp, err = testServer.Client().Get(testServer.URL + artifactPath + dummyArtifact)
 		Expect(err).Should(BeNil())
 	})
 
@@ -55,11 +49,6 @@ var _ = Describe("when artifact exists", func() {
 
 	AfterAll(func() {
 		testServer.Close()
-
-		err := os.RemoveAll(dummyArtifact)
-		Expect(err).Should(BeNil())
-
-		err = os.Remove(maven.Repo + dummyArtifact)
-		Expect(err).Should(BeNil())
+		removeDummyArtifacts(artifacts)
 	})
 })

@@ -6,3 +6,4 @@ maven/repo
 locrep-maven
 
 *.swp
+maven/dummy-repo/

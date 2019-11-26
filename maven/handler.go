@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-const Repo = "./repo"
 
 type handler struct {
 	envConf config.Environment
@@ -20,8 +19,8 @@ func NewHandler(envConf config.Environment) handler {
 }
 
 func (h handler) Handle(ctx *gin.Context) {
-	for _, repo := range config.MavenRepos {
-		filePath := Repo + ctx.Request.URL.String()
+	for _, repo := range config.MavenOriginRepos {
+		filePath := config.MavenRepo + ctx.Request.URL.String()
 
 		if _, err := os.Stat(filePath); !os.IsNotExist(err) {
 			ctx.File(filePath)
