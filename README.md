@@ -11,4 +11,8 @@ then
 ```
 
 #### just run test
-```BUILD_MODE=debug ginkgo -v -r```
+```
+BUILD_MODE=debug ginkgo -v -r
+or
+./build.sh test
+```
