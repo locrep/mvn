@@ -5,3 +5,4 @@ vendor/
 maven/repo
 locrep-maven
 
+*.swp
