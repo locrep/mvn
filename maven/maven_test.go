@@ -24,8 +24,10 @@ var _ = Describe("when artifact exists", func() {
 	const dummyArtifact = "/dummy-artifact.zip"
 
 	BeforeAll(func() {
-		err = os.Mkdir(maven.Repo, 0644)
-		Expect(err).Should(BeNil())
+		if _, err = os.Stat(maven.Repo); os.IsNotExist(err) {
+			err = os.Mkdir(maven.Repo, 0700)
+			Expect(err).Should(BeNil())
+		}
 
 		_, err = os.Create(maven.Repo + dummyArtifact)
 		Expect(err).Should(BeNil())
@@ -57,7 +59,7 @@ var _ = Describe("when artifact exists", func() {
 		err := os.RemoveAll(dummyArtifact)
 		Expect(err).Should(BeNil())
 
-		err = os.Remove(maven.Repo)
+		err = os.Remove(maven.Repo + dummyArtifact)
 		Expect(err).Should(BeNil())
 	})
 })
