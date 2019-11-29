@@ -8,7 +8,4 @@ type Artifact struct {
 	Version    string `json:"version"`
 }
 
-//return artifact path like groupId/artifactId/version
-func (a Artifact) String() string {
-	return "/" + a.GroupID + "/" + a.ArtifactID + "/" + a.Version
-}
+

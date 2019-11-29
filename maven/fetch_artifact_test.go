@@ -13,7 +13,7 @@ import (
 	"net/http/httptest"
 )
 
-var _ = Describe("when fetching artifact and artifact exists", func() {
+var _ = Describe("when fetching existing artifact", func() {
 	var (
 		testServer      *httptest.Server
 		actualResp      *http.Response

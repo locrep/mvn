@@ -8,7 +8,7 @@ type ErrorResponse struct {
 	cause   string
 }
 
-const CustomerErrorsPrefix = "MVN"
+const MavenErrorsPrefix = "MVN"
 
 var (
 	DependencyFetchError = defineError(1, "Could'nt fetch dependency")
@@ -19,7 +19,7 @@ var (
 func defineError(index int, msg string) func(error) ErrorResponse {
 	return func(err error) ErrorResponse {
 		return ErrorResponse{
-			code:    fmt.Sprintf("%s-%03d", CustomerErrorsPrefix, index),
+			code:    fmt.Sprintf("%s-%03d", MavenErrorsPrefix, index),
 			message: msg,
 			cause:   err.Error(),
 		}

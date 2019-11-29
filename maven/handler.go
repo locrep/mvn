@@ -9,16 +9,19 @@ import (
 	"strings"
 )
 
+type handler interface {
+	Handle(ctx *gin.Context)
+}
 
-type handler struct {
+type simpleHandler struct {
 	envConf config.Environment
 }
 
-func NewHandler(envConf config.Environment) handler {
-	return handler{envConf: envConf}
+func NewSimpleHandler(envConf config.Environment) handler {
+	return simpleHandler{envConf: envConf}
 }
 
-func (h handler) Handle(ctx *gin.Context) {
+func (h simpleHandler) Handle(ctx *gin.Context) {
 	for _, repo := range config.MavenOriginRepos {
 		filePath := config.MavenRepo + ctx.Request.URL.String()
 
@@ -28,9 +31,14 @@ func (h handler) Handle(ctx *gin.Context) {
 		}
 
 		response, body, errs := gorequest.New().Get(repo + ctx.Request.URL.String()).EndBytes()
-		if len(errs) > 0 || response.StatusCode != http.StatusOK {
-			ctx.JSON(http.StatusNotFound, DependencyFetchError(errs[0]))
+		if len(errs) > 0 {
+			ctx.JSON(http.StatusInternalServerError, DependencyFetchError(errs[0]))
+			return
+		} else if response.StatusCode != http.StatusOK {
+			ctx.JSON(response.StatusCode, body)
+			return
 		}
+
 
 		var (
 			file *os.File
@@ -42,17 +50,18 @@ func (h handler) Handle(ctx *gin.Context) {
 		folder := filePath[0 : len(filePath)-len(fileName)]
 
 		if err := os.MkdirAll(folder, 0777); err != nil {
-			ctx.JSON(http.StatusNotFound, FileCreateError(err))
+			ctx.JSON(http.StatusInternalServerError, FileCreateError(err))
 		}
 
 		if file, err = os.Create(filePath); err != nil {
-			ctx.JSON(http.StatusNotFound, FileCreateError(err))
+			ctx.JSON(http.StatusInternalServerError, FileCreateError(err))
 		}
 		defer file.Close()
 
 		if _, err := file.Write(body); err != nil {
-			ctx.JSON(http.StatusNotFound, FileWriteError(err))
+			ctx.JSON(http.StatusInternalServerError, FileWriteError(err))
 		}
+
 		//todo: check sha and md5
 		//todo: log
 

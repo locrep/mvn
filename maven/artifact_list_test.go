@@ -28,7 +28,7 @@ package maven_test
 //		envConf := config.Env()
 //		testServer = httptest.NewServer(server.NewServer(envConf))
 //
-//		actualResp, err = testServer.Client().Get(testServer.URL + "/artifact")
+//		actualResp, err = testServer.Client().Get(testServer.URL + "/v1/artifact")
 //		Expect(err).Should(BeNil())
 //	})
 //

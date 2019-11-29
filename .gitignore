@@ -7,3 +7,5 @@ locrep-maven
 
 *.swp
 maven/dummy-repo/
+mongo/
+repo/
