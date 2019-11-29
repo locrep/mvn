@@ -1,4 +1,4 @@
-FROM golang:1.12.6 as builder
+FROM golang:1.13.4 as builder
 WORKDIR /go/src/app
 ENV GO111MODULE on
 # install ginkgo for testing
@@ -9,7 +9,7 @@ COPY . .
 RUN PORT=8888 BUILD_MODE=debug ginkgo -v -r
 RUN go build -o locrep
 
-FROM alpine:3.9.3
+FROM golang:1.13.4-alpine3.10
 WORKDIR /
 COPY --from=builder /go/src/app/locrep /
 ENTRYPOINT /locrep
