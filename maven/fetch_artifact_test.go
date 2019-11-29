@@ -13,7 +13,7 @@ import (
 	"net/http/httptest"
 )
 
-var _ = Describe("when artifact exists", func() {
+var _ = Describe("when fetching artifact and artifact exists", func() {
 	var (
 		testServer      *httptest.Server
 		actualResp      *http.Response
@@ -40,7 +40,7 @@ var _ = Describe("when artifact exists", func() {
 		Expect(actualResp.StatusCode).Should(Equal(http.StatusOK))
 	})
 
-	It("should return expected file", func() {
+	It("the server should return expected file", func() {
 		actualContent, err := ioutil.ReadAll(actualResp.Body)
 		Expect(err).Should(BeNil())
 
