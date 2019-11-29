@@ -2,33 +2,33 @@
 
 port ?= 8888
 mode ?= debug
-mongo ?=localhost:27017
+redisUrl ?=localhost:6379
 
-runmongo: killmongo
-	docker run --restart always -p 27017:27017 --name locrep-mongo -v `pwd`/mongo:/data/db -d mongo
+redis: killredis
+	docker run --name locrep-redis -p 6379:6379 --restart always -v `pwd`/redis:/data -d redis redis-server --appendonly yes
 
-killmongo:
-	docker rm -f locrep-mongo
+killredis:
+	- docker rm -f locrep-redis
 
-connectmongo:
-	docker exec -it locrep-mongo mongo
+connectredis:
+	docker exec -it locrep-redis redis-cli
 
-buildimage: runmongo
-	docker build --build-arg mongo=$(mongo) --build-arg port=$(port) --build-arg mode=$(mode) -t locrep-maven .
+image: redis
+	docker build --build-arg redis=$(redisUrl) --build-arg port=$(port) --build-arg mode=$(mode) -t locrep-maven .
 
-runimage: buildimage
+runimage: image
 	#remove old container
 	- docker rm -f locrep-maven
 
 	#up new one
-	MONGO_URL=$(mongo) PORT=$(port) BUILD_MODE=$(mode) \
-	docker run -p $(port):$(port) --name locrep-maven locrep-maven
+	REDIS_URL=$(redisUrl) PORT=$(port) BUILD_MODE=$(mode) \
+	docker run -p $(redisUrl):$(redisUrl) --name locrep-maven locrep-maven
 
-test: runmongo
-	MONGO_URL=$(mongo) BUILD_MODE=debug ginkgo -v -r
+test: redis
+	REDIS_URL=$(redisUrl) BUILD_MODE=debug ginkgo -v -r
 
 build:
 	go build -o locrep-maven
 
 run: test build
-	MONGO_URL=$(mongo) PORT=$(port) BUILD_MODE=$(mode) ./locrep-maven
+	REDIS_URL=$(redisUrl) PORT=$(port) BUILD_MODE=$(mode) ./locrep-maven

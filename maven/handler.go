@@ -2,7 +2,8 @@ package maven
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/locrep/go/config"
+	"github.com/locrep/mvn/config"
+	"github.com/locrep/mvn/db"
 	"github.com/parnurzeal/gorequest"
 	"net/http"
 	"os"
@@ -14,18 +15,25 @@ type handler interface {
 }
 
 type simpleHandler struct {
-	envConf config.Environment
+	envConf  config.Environment
+	dbClient *db.Client
 }
 
-func NewSimpleHandler(envConf config.Environment) handler {
-	return simpleHandler{envConf: envConf}
+func NewSimpleHandler(envConf config.Environment, dbClient *db.Client) handler {
+	return simpleHandler{envConf: envConf, dbClient: dbClient}
 }
 
 func (h simpleHandler) Handle(ctx *gin.Context) {
 	for _, repo := range config.MavenOriginRepos {
 		filePath := config.MavenRepo + ctx.Request.URL.String()
+		fileFolder := filePath[0:strings.LastIndex(filePath, "/")]
+		redisKey := ctx.Request.URL.String()[0:strings.LastIndex(ctx.Request.URL.String(), "/")]
+		redisValue := ctx.Request.URL.String()[strings.LastIndex(ctx.Request.URL.String(), "/"):]
 
-		if _, err := os.Stat(filePath); !os.IsNotExist(err) {
+		var err error
+		_, err = h.dbClient.Get(redisKey)
+
+		if err == nil {
 			ctx.File(filePath)
 			return
 		}
@@ -39,26 +47,19 @@ func (h simpleHandler) Handle(ctx *gin.Context) {
 			return
 		}
 
+		err = h.dbClient.Add(redisKey, redisValue)
 
-		var (
-			file *os.File
-			err  error
-		)
-
-		paths := strings.Split(filePath, "/")
-		fileName := paths[len(paths)-1]
-		folder := filePath[0 : len(filePath)-len(fileName)]
-
-		if err := os.MkdirAll(folder, 0777); err != nil {
+		if err = os.MkdirAll(fileFolder, 0777); err != nil {
 			ctx.JSON(http.StatusInternalServerError, FileCreateError(err))
 		}
 
+		var file *os.File
 		if file, err = os.Create(filePath); err != nil {
 			ctx.JSON(http.StatusInternalServerError, FileCreateError(err))
 		}
 		defer file.Close()
 
-		if _, err := file.Write(body); err != nil {
+		if _, err = file.Write(body); err != nil {
 			ctx.JSON(http.StatusInternalServerError, FileWriteError(err))
 		}
 

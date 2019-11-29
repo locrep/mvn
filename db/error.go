@@ -1,23 +1,11 @@
 package db
 
-import "fmt"
+import . "github.com/locrep/mvn/error"
 
-const MongoErrorsPrefix = "MON"
+const ErrorPrefix = "REDIS"
 
 var (
-	CouldntConnectMongoServer       = defineError(1, "Could'nt connect mongo server")
-	CouldntConnectMongoDB           = defineError(2, "Could'nt connect mongo db")
-	CouldntReadArtifactsFromMongoDB = defineError(3, "Could'nt read artifacts from mongo db")
-	CouldntDecodeArtifact           = defineError(4, "Could'nt decode artifact")
-	GotErrorFromArtifactCursor      = defineError(5, "Got error from artifact cursor")
+	CouldntConnectRedis     = DefineError(ErrorPrefix, 1, "Couldn't connect redis server")
+	CouldntSetKeyValueData  = DefineError(ErrorPrefix, 2, "Couldn't set artifact key value data")
+	CouldntReadKeyValueData = DefineError(ErrorPrefix, 3, "Couldn't read artifact key value data")
 )
-
-func defineError(index int, msg string) func(error) map[string]interface{} {
-	return func(err error) map[string]interface{} {
-		return map[string]interface{}{
-			"code":    fmt.Sprintf("%s-%03d", MongoErrorsPrefix, index),
-			"message": msg,
-			"cause":   err.Error(),
-		}
-	}
-}

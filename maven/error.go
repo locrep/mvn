@@ -1,27 +1,12 @@
 package maven
 
-import "fmt"
+import "github.com/locrep/mvn/error"
 
-type ErrorResponse struct {
-	code    string
-	message string
-	cause   string
-}
-
-const MavenErrorsPrefix = "MVN"
+const ErrorPrefix = "MVN"
 
 var (
-	DependencyFetchError = defineError(1, "Could'nt fetch dependency")
-	FileCreateError      = defineError(2, "Could'nt create file path")
-	FileWriteError       = defineError(3, "Could'nt write file")
+	DependencyFetchError = error.DefineError(ErrorPrefix, 1, "Couldn't fetch dependency")
+	FileCreateError      = error.DefineError(ErrorPrefix, 2, "Couldn't create file path")
+	FileWriteError       = error.DefineError(ErrorPrefix, 3, "Couldn't write file")
+	ThereIsNoArtifact    = error.DefineError(ErrorPrefix, 4, "There is no artifact")
 )
-
-func defineError(index int, msg string) func(error) ErrorResponse {
-	return func(err error) ErrorResponse {
-		return ErrorResponse{
-			code:    fmt.Sprintf("%s-%03d", MavenErrorsPrefix, index),
-			message: msg,
-			cause:   err.Error(),
-		}
-	}
-}

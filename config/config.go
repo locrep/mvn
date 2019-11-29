@@ -14,7 +14,8 @@ var MavenRepo = "./repo"
 type Environment struct {
 	Port      string
 	BuildMode string
-	MongoUrl  string
+	RedisUrl  string
+	RedisDB   int
 }
 
 var Conf = struct {
@@ -28,6 +29,7 @@ func Env() Environment {
 	return Environment{
 		Port:      os.Getenv("PORT"),
 		BuildMode: os.Getenv("BUILD_MODE"),
-		MongoUrl:  os.Getenv("MONGO_URL"),
+		RedisUrl:  os.Getenv("REDIS_URL"),
+		RedisDB:   0,
 	}
 }

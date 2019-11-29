@@ -8,4 +8,14 @@ type Artifact struct {
 	Version    string `json:"version"`
 }
 
+//return artifact path like groupId/artifactId/version
+func (a Artifact) String() string {
+	return "/" + a.GroupID + "/" + a.ArtifactID + "/" + a.Version
+}
 
+type ArtifactRepos []ArtifactRepo
+
+type ArtifactRepo struct {
+	Repo  string   `json:"repo"`
+	Files []string `json:"files"`
+}

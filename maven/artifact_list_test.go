@@ -1,54 +1,48 @@
 package maven_test
 
-//import (
-//	"encoding/json"
-//	"github.com/google/uuid"
-//	"github.com/locrep/go/config"
-//	"github.com/locrep/go/maven"
-//	"github.com/locrep/go/server"
-//	. "github.com/locrep/go/utils"
-//	. "github.com/onsi/ginkgo"
-//	. "github.com/onsi/gomega"
-//	"io/ioutil"
-//	"net/http"
-//	"net/http/httptest"
-//)
-//
-//var _ = Describe("When try to get artifact list", func() {
-//	var (
-//		testServer        *httptest.Server
-//		actualResp        *http.Response
-//		err               error
-//		expectedArtifacts maven.Artifacts
-//	)
-//
-//	BeforeAll(func() {
-//		expectedArtifacts = createDummyRepos([]byte(uuid.New().String()))
-//
-//		envConf := config.Env()
-//		testServer = httptest.NewServer(server.NewServer(envConf))
-//
-//		actualResp, err = testServer.Client().Get(testServer.URL + "/v1/artifact")
-//		Expect(err).Should(BeNil())
-//	})
-//
-//	It("the server should return 200 status ok", func() {
-//		Expect(actualResp.StatusCode).Should(Equal(http.StatusOK))
-//	})
-//
-//	It("should return all artifacts", func() {
-//		actualContent, err := ioutil.ReadAll(actualResp.Body)
-//		Expect(err).Should(BeNil())
-//
-//		var actualArtifacts maven.Artifacts
-//		err = json.Unmarshal(actualContent, &actualArtifacts)
-//		Expect(err).Should(BeNil())
-//
-//		Expect(actualArtifacts).Should(Equal(expectedArtifacts))
-//	})
-//
-//	AfterAll(func() {
-//		testServer.Close()
-//		removeDummyArtifacts(expectedArtifacts)
-//	})
-//})
+import (
+	"encoding/json"
+	"github.com/locrep/mvn/maven"
+	. "github.com/locrep/mvn/utils"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"io/ioutil"
+	"net/http"
+)
+
+var _ = Describe("When try to get artifact list", func() {
+	var (
+		actualResp        *http.Response
+		err               error
+		expectedArtifacts maven.ArtifactRepos
+	)
+
+	BeforeAll(func() {
+		expectedArtifacts = make(maven.ArtifactRepos, 0)
+		for _, artifact := range artifacts {
+			artifactRepo := maven.ArtifactRepo{
+				Repo:  artifact.String(),
+				Files: []string{dummyArtifact},
+			}
+
+			expectedArtifacts = append(expectedArtifacts, artifactRepo)
+		}
+		actualResp, err = testServer.Client().Get(testServer.URL + "/v1/artifact")
+		Expect(err).Should(BeNil())
+	})
+
+	It("the server should return 200 status ok", func() {
+		Expect(actualResp.StatusCode).Should(Equal(http.StatusOK))
+	})
+
+	It("should return all artifacts", func() {
+		actualContent, err := ioutil.ReadAll(actualResp.Body)
+		Expect(err).Should(BeNil())
+
+		var actualArtifactRepos maven.ArtifactRepos
+		err = json.Unmarshal(actualContent, &actualArtifactRepos)
+		Expect(err).Should(BeNil())
+
+		Expect(len(actualArtifactRepos)).Should(Equal(len(expectedArtifacts)))
+	})
+})

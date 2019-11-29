@@ -1,74 +1,56 @@
 package db
 
 import (
-	"context"
-	"github.com/locrep/go/config"
+	"errors"
+	"fmt"
+	"github.com/go-redis/redis/v7"
 	logger "github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
 type Client struct {
-	artifact *mongo.Collection
+	Redis *redis.Client
 }
 
-func Connect(mongoUrl string) Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://" + mongoUrl))
-	if err != nil {
-		logger.WithFields(CouldntConnectMongoServer(err)).Error(err.Error())
+func NewClient(redisUrl string, db int) (*Client, error) {
+	opts := &redis.Options{
+		Addr:         redisUrl,
+		DialTimeout:  10 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		PoolSize:     10,
+		PoolTimeout:  30 * time.Second,
+		DB:           db,
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), config.Conf.DBConnectionTimeout*time.Second)
-	err = client.Connect(ctx)
+	client := redis.NewClient(opts)
+
+	_, err := client.Ping().Result()
 	if err != nil {
-		logger.WithFields(CouldntConnectMongoDB(err)).Error(err.Error())
+		logger.WithFields(CouldntConnectRedis(err)).Error(err.Error())
+		return nil, err
 	}
 
-	return Client{artifact: client.Database("maven").Collection("artifact")}
+	return &Client{Redis: client}, nil
 }
 
-func (c Client) GetAll() {
-	ctx, _ := context.WithTimeout(context.Background(), config.Conf.DBReadTimeout*time.Second)
-	cur, err := c.artifact.Find(ctx, nil)
+func (c Client) Add(key, value string) error {
+	err := c.Redis.Set(key, value, 0).Err()
 	if err != nil {
-		logger.WithFields(CouldntReadArtifactsFromMongoDB(err)).Error(err.Error())
+		logger.WithFields(CouldntSetKeyValueData(err)).Error(err.Error())
+		return err
 	}
-
-	defer cur.Close(ctx)
-
-	for cur.Next(ctx) {
-		var result bson.M
-		err := cur.Decode(&result)
-		if err != nil {
-			logger.WithFields(CouldntDecodeArtifact(err)).Error(err.Error())
-		}
-	}
-
-	if err := cur.Err(); err != nil {
-		logger.WithFields(GotErrorFromArtifactCursor(err)).Error(err.Error())
-	}
+	return nil
 }
 
-func (c Client) FindArtifact() {
-	ctx, _ := context.WithTimeout(context.Background(), config.Conf.DBReadTimeout*time.Second)
-	cur, err := c.artifact.Find(ctx, nil)
-	if err != nil {
-		logger.WithFields(CouldntReadArtifactsFromMongoDB(err)).Error(err.Error())
+func (c Client) Get(key string) (string, error) {
+	val, err := c.Redis.Get(key).Result()
+	if err == redis.Nil {
+		return "", errors.New(fmt.Sprintf("%s key doesn't exist", key))
+	} else if err != nil {
+		logger.WithFields(CouldntReadKeyValueData(err)).Error(err.Error())
+		return "", err
 	}
 
-	defer cur.Close(ctx)
-
-	for cur.Next(ctx) {
-		var result bson.M
-		err := cur.Decode(&result)
-		if err != nil {
-			logger.WithFields(CouldntDecodeArtifact(err)).Error(err.Error())
-		}
-	}
-
-	if err := cur.Err(); err != nil {
-		logger.WithFields(GotErrorFromArtifactCursor(err)).Error(err.Error())
-	}
+	return val, nil
 }
