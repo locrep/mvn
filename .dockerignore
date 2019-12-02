@@ -4,4 +4,10 @@ vendor/
 locrep-go.exe
 *.exe
 maven-repo
+Dockerfile
+.gitignore
+mvn
+README.md
+todos
+
 
