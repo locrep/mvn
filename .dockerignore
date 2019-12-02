@@ -9,5 +9,6 @@ Dockerfile
 mvn
 README.md
 todos
+Makefile
 
 

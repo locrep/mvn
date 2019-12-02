@@ -22,11 +22,15 @@ runimage: image
 	- docker rm -f locrep-maven
 
 	#up new one
-	REDIS_URL=$(REDIS_IP):6379 PORT=$(port) BUILD_MODE=$(mode) \
-	docker run -p $(port):$(port) -d --name locrep-maven locrep-maven
+	docker run \
+	-e REDIS_URL=$(REDIS_IP):6379 -e PORT=$(port) -e BUILD_MODE=$(mode) \
+	-p $(port):$(port) -d --name locrep-maven locrep-maven
 
 connectlocrep:
 	docker exec -it locrep-maven sh
+
+logs:
+	docker logs -f locrep-maven
 
 test: redis
 	REDIS_URL=$(redisUrl) BUILD_MODE=debug ginkgo -v -r
