@@ -36,7 +36,7 @@ func (h artifactHandler) Handle(ctx *gin.Context) {
 		}
 
 		for _, key := range keys {
-			value, err := h.dbClient.Get(key)
+			files, err := h.dbClient.Get(key)
 			if err != nil {
 				logger.WithFields(ThereIsNoArtifact(err)).Error(err.Error())
 				continue
@@ -44,7 +44,7 @@ func (h artifactHandler) Handle(ctx *gin.Context) {
 
 			artifactRepos = append(artifactRepos, ArtifactRepo{
 				Repo:  key,
-				Files: []string{value},
+				Files: files,
 			})
 
 		}

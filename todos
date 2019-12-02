@@ -2,3 +2,4 @@ make redis sentinel
 change redis store type
 add repo folders to persistent volume
 add kubernetes (pod, service, deployment)
+add user credential for redis

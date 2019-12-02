@@ -35,7 +35,7 @@ func NewClient(redisUrl string, db int) (*Client, error) {
 }
 
 func (c Client) Add(key, value string) error {
-	err := c.Redis.Set(key, value, 0).Err()
+	err := c.Redis.HSet(key, value, 1).Err()
 	if err != nil {
 		logger.WithFields(CouldntSetKeyValueData(err)).Error(err.Error())
 		return err
@@ -43,14 +43,18 @@ func (c Client) Add(key, value string) error {
 	return nil
 }
 
-func (c Client) Get(key string) (string, error) {
-	val, err := c.Redis.Get(key).Result()
+func (c Client) Get(key string) ([]string, error) {
+	valueMap, err := c.Redis.HGetAll(key).Result()
 	if err == redis.Nil {
-		return "", errors.New(fmt.Sprintf("%s key doesn't exist", key))
+		return nil, errors.New(fmt.Sprintf("%s key doesn't exist", key))
 	} else if err != nil {
 		logger.WithFields(CouldntReadKeyValueData(err)).Error(err.Error())
-		return "", err
+		return nil, err
 	}
 
-	return val, nil
+	files := make([]string, 0, len(valueMap))
+	for key := range valueMap {
+		files = append(files, key)
+	}
+	return files, nil
 }

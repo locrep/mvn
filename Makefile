@@ -17,11 +17,10 @@ connectredis:
 image: redis
 	docker build --build-arg redis=$(REDIS_IP):6379 --build-arg port=$(port) --build-arg mode=$(mode) -t locrep-maven .
 
-runimage: image
-	#remove old container
+killimage:
 	- docker rm -f locrep-maven
 
-	#up new one
+runimage: image killimage
 	docker run \
 	-e REDIS_URL=$(REDIS_IP):6379 -e PORT=$(port) -e BUILD_MODE=$(mode) \
 	-p $(port):$(port) -d --name locrep-maven locrep-maven

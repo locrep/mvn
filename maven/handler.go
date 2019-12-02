@@ -30,12 +30,16 @@ func (h simpleHandler) Handle(ctx *gin.Context) {
 		redisKey := ctx.Request.URL.String()[0:strings.LastIndex(ctx.Request.URL.String(), "/")]
 		redisValue := ctx.Request.URL.String()[strings.LastIndex(ctx.Request.URL.String(), "/"):]
 
-		var err error
-		_, err = h.dbClient.Get(redisKey)
+		var (
+			err                error
+		)
 
-		if err == nil {
+		//if file exists then serve
+		if _, err = os.Stat(filePath); !os.IsNotExist(err) {
 			ctx.File(filePath)
-			return
+
+			//is file in redis, if not, add it to redis
+			go h.dbClient.Add(redisKey, redisValue)
 		}
 
 		response, body, errs := gorequest.New().Get(repo + ctx.Request.URL.String()).EndBytes()
@@ -46,8 +50,6 @@ func (h simpleHandler) Handle(ctx *gin.Context) {
 			ctx.JSON(response.StatusCode, body)
 			return
 		}
-
-		err = h.dbClient.Add(redisKey, redisValue)
 
 		if err = os.MkdirAll(fileFolder, 0777); err != nil {
 			ctx.JSON(http.StatusInternalServerError, FileCreateError(err))
@@ -67,6 +69,9 @@ func (h simpleHandler) Handle(ctx *gin.Context) {
 		//todo: log
 
 		ctx.File(filePath)
+
+		//is file in redis, if not, add it to redis
+		go h.dbClient.Add(redisKey, redisValue)
 	}
 
 }
