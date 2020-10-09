@@ -7,6 +7,6 @@ locrep-maven
 
 *.swp
 maven/dummy-repo/
-redis/
+redis-volume/
 repo/
 mvn

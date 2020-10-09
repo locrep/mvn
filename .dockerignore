@@ -11,4 +11,8 @@ README.md
 todos
 Makefile
 
+docker-stack.yml
+.dockerignore
+
+
 
